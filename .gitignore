@@ -1,0 +1,5 @@
+build*/
+bazel-*
+.sconsign*
+.lock-waf*
+.waf*/

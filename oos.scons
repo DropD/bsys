@@ -1,0 +1,32 @@
+import sys
+from pathlib import Path
+
+top = Path("__file__").absolute().parent
+gen = top / "gen" / "main.py"
+
+env = Environment(CPPPATH=['.'], CPPFLAGS=["--std=c++17"])
+
+env.Append(
+    BUILDERS={
+        "Gen": Builder(
+            action=f"{sys.executable} $SOURCE hello $TARGET scons"
+        )
+    }
+)
+
+env.Append(
+    BUILDERS={
+        "Run": Builder(action="$SOURCE > $TARGET && cat $TARGET")
+    }
+)
+
+env.Gen("hellolib.cpp", str(gen))
+
+env.Library("hellolib", ["hellolib.cpp"])
+env.Program("hello-scons", ["main.cpp"], LIBS=["hellolib"], LIBPATH=".")
+Repository(str(top.parent / "include"))
+Repository(str(top.parent / "src"))
+
+env.AlwaysBuild("test.log")
+
+env.Run("test.log", "hello-scons")
