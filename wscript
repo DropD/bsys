@@ -20,4 +20,5 @@ def build(ctx):
     ctx(rule="python ${SRC} hello ${TGT} waf", source="gen/main.py", target=hellolib_src)
     ctx.shlib(source=hellolib_src, target="hellolib", includes=includes)
     ctx.program("hello-waf", source="src/main.cpp", target="hello-waf", use="hellolib", includes=includes)
-    ctx(rule="./${SRC}", source="hello-waf", always=True)
+    ctx(name="run-hello", rule="./${SRC}", source="hello-waf", always=True)
+    ctx(name="test-hello", rule="${SRC[0].abspath()} ${SRC[1]} 'Hello waf'", source=["test_hello.sh", "hello-waf"], always=True)
