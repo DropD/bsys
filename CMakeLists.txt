@@ -24,4 +24,4 @@ add_executable(hello_cmake src/main.cpp)
 target_link_libraries(hello_cmake hellolib)
 
 add_test(NAME say-hello COMMAND hello_cmake)
-set_test_properties(say-hello PROPERTIES PASS_REGULAR_EXPRESSION "hello cmake")
+set_tests_properties(say-hello PROPERTIES PASS_REGULAR_EXPRESSION "Hello cmake")
