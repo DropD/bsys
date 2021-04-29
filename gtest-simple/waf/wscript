@@ -1,0 +1,57 @@
+import pathlib
+
+APPNAME = "gtest-simple"
+VERSION = "1.0"
+
+top = '.'
+out = "build"
+includes = [top + "/include"]
+cflags = ["--std=c++2a"]
+
+def options(ctx):
+    ctx.load("compiler_cxx")
+
+def configure(ctx):
+    ctx.load("compiler_cxx")
+    ctx.check_cfg(
+        package="gtest",
+        pkg_config_path="gtest/lib/pkgconfig",
+        args="--libs",
+        variables=["LDFLAGS"],
+    )
+    print(ctx.env.GTEST_LDFLAGS)
+    ctx.check_cfg(
+        package="gtest",
+        pkg_config_path="gtest/lib/pkgconfig",
+        args="--cflags",
+        variables=["CFLAGS"],
+        msg="Checking for 'gtest' c flags",
+    )
+    print(ctx.env.GTEST_CFLAGS)
+    ctx.check_cfg(
+        package="gtest",
+        pkg_config_path="gtest/lib/pkgconfig",
+        variables=["includedir", "libdir"],
+        msg="Checking for 'gtest' include and lib dirs",
+    )
+    print(ctx.env.GTEST_includedir)
+    print(ctx.env.GTEST_libdir)
+
+def build(ctx):
+    ctx.program(
+        "main",
+        target="main",
+        source="src/main.cpp",
+        includes=includes,
+        cxxflags=cflags
+    )
+    ctx.program(
+        "testapp",
+        target="square_plus_one_test",
+        source="tests/test_square_plus_one.cpp",
+        #libraries=["gtest"],
+        includes=includes+[ctx.env.GTEST_includedir],
+        cxxflags=cflags+ctx.env.GTEST_CFLAGS.split(),
+        ldflags=ctx.env.GTEST_LDFLAGS.split(),
+        libpath=[ctx.env.GTEST_libdir],
+    )

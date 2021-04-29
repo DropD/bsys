@@ -1,0 +1,3 @@
+It seems the best solution would be to use the github.com/steinwurf version of waf and gtest.
+
+This shall be left as an exercise for later...

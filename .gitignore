@@ -3,3 +3,5 @@ bazel-*
 .sconsign*
 .lock-waf*
 .waf*/
+meson/subprojects
+googletest*
