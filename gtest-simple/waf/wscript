@@ -14,28 +14,28 @@ def options(ctx):
 def configure(ctx):
     ctx.load("compiler_cxx")
     ctx.check_cfg(
-        package="gtest",
+        package="gtest_main",
         pkg_config_path="gtest/lib/pkgconfig",
         args="--libs",
         variables=["LDFLAGS"],
     )
-    print(ctx.env.GTEST_LDFLAGS)
+    print(ctx.env.GTEST_MAIN_LDFLAGS)
     ctx.check_cfg(
-        package="gtest",
+        package="gtest_main",
         pkg_config_path="gtest/lib/pkgconfig",
         args="--cflags",
         variables=["CFLAGS"],
-        msg="Checking for 'gtest' c flags",
+        msg="Checking for 'gtest_main' c flags",
     )
-    print(ctx.env.GTEST_CFLAGS)
+    print(ctx.env.GTEST_MAIN_CFLAGS)
     ctx.check_cfg(
-        package="gtest",
+        package="gtest_main",
         pkg_config_path="gtest/lib/pkgconfig",
         variables=["includedir", "libdir"],
-        msg="Checking for 'gtest' include and lib dirs",
+        msg="Checking for 'gtest_main' include and lib dirs",
     )
-    print(ctx.env.GTEST_includedir)
-    print(ctx.env.GTEST_libdir)
+    print(ctx.env.GTEST_MAIN_includedir)
+    print(ctx.env.GTEST_MAIN_libdir)
 
 def build(ctx):
     ctx.program(
@@ -49,9 +49,9 @@ def build(ctx):
         "testapp",
         target="square_plus_one_test",
         source="tests/test_square_plus_one.cpp",
-        #libraries=["gtest"],
-        includes=includes+[ctx.env.GTEST_includedir],
-        cxxflags=cflags+ctx.env.GTEST_CFLAGS.split(),
-        ldflags=ctx.env.GTEST_LDFLAGS.split(),
-        libpath=[ctx.env.GTEST_libdir],
+        # ~ use=["gtest", "gtest_main"],
+        includes=includes+[ctx.env.GTEST_MAIN_includedir],
+        cxxflags=cflags+ctx.env.GTEST_MAIN_CFLAGS.split(),
+        ldflags=ctx.env.GTEST_MAIN_LDFLAGS.split(),
+        libpath=[ctx.env.GTEST_MAIN_libdir],
     )
