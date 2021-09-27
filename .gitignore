@@ -5,3 +5,4 @@ bazel-*
 .waf*/
 meson/subprojects
 googletest*
+externals/

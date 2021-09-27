@@ -8,6 +8,12 @@ gtest_deps = [
     gtest.get_variable('gtest_main_dep')
 ]
 
+main = executable(
+    'main',
+    'src' / 'main.cpp',
+    include_directories : include
+)
+
 square_plus_one_test = executable(
     'square-plus-one-test',
     'tests' / 'test_square_plus_one.cpp',
