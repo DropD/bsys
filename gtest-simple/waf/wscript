@@ -1,7 +1,8 @@
-from waflib.Build import BuildContext
-from waflib.Errors import ConfigurationError
 import pathlib
 import subprocess as sp
+
+from waflib.Build import BuildContext, CleanContext, InstallContext, UninstallContext
+from waflib.Errors import ConfigurationError
 
 APPNAME = "gtest-simple"
 VERSION = "1.0"
@@ -14,7 +15,6 @@ gtest_top = top + f"/googletest-{GTEST_COMMIT}/googletest"
 includes = [
     top + "/include",
 ]
-cflags = ["--std=c++2a"]
 
 def options(ctx):
     ctx.load("compiler_cxx waf_unit_test")
@@ -22,6 +22,8 @@ def options(ctx):
 
 
 def configure(ctx):
+    ctx.env.CXX = ["g++"]
+    ctx.env.CXXFLAGS = ["--std=c++20"]
     ctx.load("compiler_cxx waf_unit_test")
     ctx.find_program("git")
     ctx.env.GTEST_ROOT = ctx.options.googletest_root
@@ -43,18 +45,40 @@ def configure(ctx):
     except ConfigurationError:
         print("googletest sources not found, downloading")
 
+    GTEST_CXX = ctx.env.GTEST_CXX
+    GTEST_ROOT = ctx.env.GTEST_ROOT
+
+    ctx.env.INCLUDES = [top + "/include"]
+    ctx.env.INCLUDES_GTEST = [ctx.env.GTEST_ROOT, f"{ctx.env.GTEST_ROOT}/include"]
+
+    ctx.setenv("gcc")
+    ctx.env.CXX = ["g++-10"]
+    ctx.env.CXXFLAGS = ["--std=c++20"]
+    ctx.env.INCLUDES = [top + "/include"]
+    ctx.env.GTEST_CXX = GTEST_CXX
+    ctx.env.GTEST_ROOT = GTEST_ROOT
+    ctx.env.INCLUDES_GTEST = [ctx.env.GTEST_ROOT, f"{ctx.env.GTEST_ROOT}/include"]
+    ctx.load("compiler_cxx")
+
+    ctx.setenv("clang")
+    ctx.env.CXX = ["clang++"]
+    ctx.env.CXXFLAGS = ["-std=c++20"]
+    ctx.env.INCLUDES = [top + "/include"]
+    ctx.env.GTEST_CXX = GTEST_CXX
+    ctx.env.GTEST_ROOT = GTEST_ROOT
+    ctx.env.INCLUDES_GTEST = [ctx.env.GTEST_ROOT, ctx.env.GTEST_ROOT + "/include"]
+    ctx.load("compiler_cxx")
+
 
 def build(ctx):
     ctx.program(
         "main",
         target="main",
         source="src/main.cpp",
-        includes=includes,
-        cxxflags=cflags
     )
 
 
-def run_test(ctx):
+def test(ctx):
     ctx.program(
         "testapp",
         features="test",
@@ -62,17 +86,10 @@ def run_test(ctx):
         source=[
             "tests/test_square_plus_one.cpp",
         ] + ctx.env.GTEST_CXX,
-        includes=includes + [ctx.env.GTEST_ROOT, f"{ctx.env.GTEST_ROOT}/include"],
-        cxxflags=cflags,
-        depends_on="gtest_updated",
+        use="GTEST",
     )
     from waflib.Tools import waf_unit_test
     ctx.add_post_fun(waf_unit_test.summary)
-
-
-def test(ctx):
-    from waflib import Options
-    Options.commands = ["configure", "build", "run_test"] + Options.commands
 
 
 class TestContext(BuildContext):
@@ -80,6 +97,9 @@ class TestContext(BuildContext):
     fun = "test"
 
 
-class RunTestContext(BuildContext):
-    cmd = "run_test"
-    fun = "run_test"
+for variant in ["gcc", "clang"]:
+    for context in [BuildContext, CleanContext, InstallContext, UninstallContext, TestContext]:
+        name = context.__name__.replace("Context", "").lower()
+        class tmp(context):
+            cmd = name + "_" + variant
+            variant = variant
