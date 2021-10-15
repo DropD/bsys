@@ -1,6 +1,7 @@
 build*/
 bazel-*
 .sconsign*
+.sconf*
 .lock-waf*
 .waf*/
 meson/subprojects

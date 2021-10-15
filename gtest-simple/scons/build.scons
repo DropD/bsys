@@ -1,0 +1,69 @@
+from pathlib import Path
+import subprocess as sp
+
+
+top = Path("__file__").absolute().parent
+externals = top / "externals"
+gtest_repo = externals / "googletest"
+gtest_remote = "https://github.com/google/googletest"
+
+env = Environment(CPPPATH=[".", "src", "include", "tests"])
+conf = Configure(env)
+
+externals.mkdir(exist_ok=True)
+
+git_available = True
+try:
+    sp.check_call(["git",  "--version"])
+except FileNotFoundError:
+    git_available = False
+
+gtest_exists = gtest_repo.exists()
+
+if not gtest_exists:
+    if not git_available:
+        print("googletest repo not found and git unavailable.")
+        Exit(1)
+    print(f"cloning googletest to {gtest_repo}")
+    sp.check_call(["git", "clone", gtest_remote, str(gtest_repo)])
+elif git_available:
+    print(f"updating googletest at {gtest_repo}")
+    sp.check_call(["git", "pull"], cwd=gtest_repo)
+print(f"googletest is at {gtest_repo}")
+
+conf.env.Append(CPPPATH=[str(gtest_repo / "googletest")])
+conf.env.Append(CPPPATH=[str(gtest_repo / "googletest" / "include")])
+
+gtest_all_cc = gtest_repo / "googletest" / "src" / "gtest-all.cc"
+gtest_main_cc = gtest_repo / "googletest" / "src" / "gtest_main.cc"
+GTEST_CXX = [str(i) for i in [gtest_all_cc, gtest_main_cc]]
+
+if not gtest_all_cc.exists():
+    print(f"gtest-all.cc not found at {gtest_all_cc}")
+    Exit(1)
+if not gtest_main_cc.exists():
+    print(f"gtest_main.cc not found at {gtest_main_cc}")
+    Exit(1)
+
+if conf.env["CXX"] == "g++":
+    conf.env.Append(CXXFLAGS=["--std=c++20"])
+elif conf.env["CXX"] == "clang++":
+    conf.env.Append(CXXFLAGS=["-std=c++20"])
+
+env = conf.Finish()
+
+main = env.Program("main", "src/main.cpp")
+
+testapp = env.Program("square_plus_one_test", ["tests/test_square_plus_one.cpp"] + GTEST_CXX)
+
+def unit_test(target, source, env):
+    for testapp in source:
+        try:
+            sp.check_call([testapp.abspath])
+        except CalledProcessError:
+            return 1
+        with open(str(target[0]), "w") as log:
+            log.write(f"PASSED\n")
+
+allpass = env.Command("test", "square_plus_one_test", action=unit_test)
+test = env.Alias("test", allpass)
